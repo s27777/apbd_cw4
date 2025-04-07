@@ -1,4 +1,5 @@
-﻿using Tutorial3.Models;
+﻿using System.Runtime.Serialization.Json;
+using Tutorial3.Models;
 
 public class EmpDeptSalgradeTests
 {
@@ -86,7 +87,8 @@ public class EmpDeptSalgradeTests
         var depts = Database.GetDepts();
 
         var result = (
-            from e in emps join d in depts on e.DeptNo equals d.DeptNo
+            from e in emps 
+            join d in depts on e.DeptNo equals d.DeptNo
             select new { EName = e.EName, DName = d.DName }
             ).ToList();
 
@@ -102,7 +104,7 @@ public class EmpDeptSalgradeTests
 
         var result = (
             from e in emps
-            group  e by e.DeptNo into gr
+            group e by e.DeptNo into gr
             select new
             {
                 DeptNo = gr.Key,
@@ -138,8 +140,27 @@ public class EmpDeptSalgradeTests
     {
         var emps = Database.GetEmps();
         var grades = Database.GetSalgrades();
-
-        // var result = null;
+        
+        /*var result = (
+            from e in emps
+            join g in grades
+            where e.Sal >= g.Losal && e.Sal <= g.Hisal
+            select new
+        {
+            EName = e.EName,
+            Grade = g.Grade
+        }).ToList();*/
+        
+        var result = (
+            from e in emps
+            from g in grades
+            where e.Sal >= g.Losal && e.Sal <= g.Hisal
+            select new
+            {
+                EName = e.EName,
+                Grade = g.Grade
+            }).ToList();
+        
         //
         // Assert.Contains(result, r => r.EName == "ALLEN" && r.Grade == 3);
     }
@@ -151,9 +172,16 @@ public class EmpDeptSalgradeTests
     {
         var emps = Database.GetEmps();
 
-        // var result = null; 
-        //
-        // Assert.Contains(result, r => r.DeptNo == 30 && r.AvgSal > 1000);
+        var result = (
+            from e in emps
+            group e by e.DeptNo into gr
+            select new
+        {
+            DeptNo = gr.Key,
+            AvgSal = gr.Average(e => e.Sal)
+        }).ToList(); 
+        
+        Assert.Contains(result, r => r.DeptNo == 30 && r.AvgSal > 1000);
     }
 
     // 10. Complex filter with subquery and join
@@ -163,8 +191,17 @@ public class EmpDeptSalgradeTests
     {
         var emps = Database.GetEmps();
 
-        // var result = null; 
-        //
-        // Assert.Contains("ALLEN", result);
+        var avgsal = (from e in emps select e.Sal).Average();
+        
+        var result = (
+            from e in emps
+            where e.Sal < avgsal
+            select new
+        {
+            DeptNo = e.DeptNo,
+            Sal = e.Sal
+        }).ToList();
+        // todo
+        //Assert.Contains("ALLEN", result);
     }
 }
