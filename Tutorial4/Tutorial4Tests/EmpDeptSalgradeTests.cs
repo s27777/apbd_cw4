@@ -9,12 +9,16 @@ public class EmpDeptSalgradeTests
     public void ShouldReturnAllSalesmen()
     {
         var emps = Database.GetEmps();
-
-        List<Emp> result = new List<Emp>();
         
-        foreach (Emp e in emps)
+        var result = (
+            from e in emps
+            where e.Job == "SALESMAN"
+            select e
+        ).ToList();
+
+        foreach (Emp r in emps)
         {
-            result.Add(e);
+            Console.WriteLine(r);
         }
 
         Assert.Equal(2, result.Count);
@@ -28,12 +32,15 @@ public class EmpDeptSalgradeTests
     {
         var emps = Database.GetEmps();
 
-        List<Emp> result = new List<Emp>();
-        
-        foreach (Emp e in emps)
-        {
-            result.Add(e);
-        }
+        var result = (
+            from e in emps
+            orderby e.Sal descending
+            select new
+            {
+                EmpNo = e.EmpNo,
+                Sal = e.Sal
+            }
+        ).ToList();
 
         Assert.Equal(2, result.Count);
         Assert.True(result[0].Sal >= result[1].Sal);
@@ -47,12 +54,16 @@ public class EmpDeptSalgradeTests
         var emps = Database.GetEmps();
         var depts = Database.GetDepts();
 
-        List<Emp> result = new List<Emp>(); 
-        
-        foreach (Emp e in emps)
-        {
-            result.Add(e);
-        }
+        var result = (
+            from e in emps
+            join d in depts on e.DeptNo equals d.DeptNo
+            where e.DeptNo == d.DeptNo && d.Loc == "CHICAGO"
+            select new
+            {
+                EmpNo = e.EmpNo,
+                DeptNo = e.DeptNo
+            }
+        ).ToList();
 
         Assert.All(result, e => Assert.Equal(30, e.DeptNo));
     }
@@ -191,17 +202,15 @@ public class EmpDeptSalgradeTests
     {
         var emps = Database.GetEmps();
 
-        var avgsal = (from e in emps select e.Sal).Average();
-        
         var result = (
             from e in emps
-            where e.Sal < avgsal
-            select new
-        {
-            DeptNo = e.DeptNo,
-            Sal = e.Sal
-        }).ToList();
-        // todo
-        //Assert.Contains("ALLEN", result);
+            let deptAvg = emps
+                .Where(emp => emp.DeptNo == e.DeptNo)
+                .Average(emp => emp.Sal)
+            where e.Sal > deptAvg
+            select e.EName
+        ).ToList();
+
+        Assert.Contains("ALLEN", result);
     }
 }
